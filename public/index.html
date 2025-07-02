@@ -1,0 +1,38 @@
+<!-- public/index.html (ATUALIZADO) -->
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otimizador de Imagem Inteligente</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Nova fonte para um visual mais moderno -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Otimizador de Imagem Inteligente</h1>
+            <p>Deixe sua imagem mais leve para a web, de forma automática.</p>
+        </header>
+        
+        <form id="upload-form">
+            <label for="image-input" class="file-label">
+                <span class="file-label-text">Clique para selecionar</span>
+            </label>
+            <input type="file" id="image-input" name="image" accept="image/jpeg, image/png">
+            
+            <button type="submit" class="btn-primary">Otimizar Agora</button>
+        </form>
+        
+        <div id="result-area" class="result-area">
+            <!-- O resultado animado aparecerá aqui -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
