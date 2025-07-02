@@ -1,73 +1,53 @@
-// server.js (ATUALIZADO)
+// server.js (VERSÃO FINAL PARA HOSPEDAGEM)
 
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
+const os = require('os'); // Usado para encontrar a pasta temporária do sistema
 
 const app = express();
-const PORT = 3000;
+const PORT = 3000; // O Render vai ignorar isso, mas é bom para o teste local
 
+// Servir os arquivos estáticos da pasta 'public' (index.html, style.css, etc.)
 app.use(express.static('public'));
-app.use('/optimized', express.static(path.join(__dirname, 'optimized')));
 
-const uploadsDir = './uploads';
-const optimizedDir = './optimized';
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-if (!fs.existsSync(optimizedDir)) fs.mkdirSync(optimizedDir);
+// Configuração do Multer para salvar o upload em uma pasta temporária
+const upload = multer({ dest: os.tmpdir() });
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
-});
-
-// Mudar para upload.single para aceitar apenas um arquivo
-const upload = multer({ 
-    storage: storage
-});
-
-// A rota agora usa upload.single('image')
 app.post('/optimize', upload.single('image'), async (req, res) => {
-    // Agora usamos req.file, não req.files
     if (!req.file) {
         return res.status(400).json({ error: 'Nenhuma imagem enviada.' });
     }
 
     try {
         const { path: tempPath, originalname, size: originalSize } = req.file;
-        const optimizedFileName = `opt-${originalname}`;
-        const outputPath = path.join(optimizedDir, optimizedFileName);
 
-        // Processa a imagem e a armazena em um buffer (em memória)
         const optimizedBuffer = await sharp(tempPath)
-            .jpeg({ quality: 80, progressive: true }) // progressive: true pode ajudar na percepção de carregamento
+            .jpeg({ quality: 80, progressive: true })
             .toBuffer();
 
-        let finalSize = originalSize;
-        let statusMessage = "Já estava otimizada! Usando a original.";
+        fs.unlinkSync(tempPath); // Limpa o arquivo original temporário imediatamente
 
-        // *** LÓGICA DE COMPARAÇÃO DE TAMANHO ***
-        if (optimizedBuffer.length < originalSize) {
-            // Se o buffer otimizado for menor, salve-o no disco
-            fs.writeFileSync(outputPath, optimizedBuffer);
-            finalSize = optimizedBuffer.length;
-            statusMessage = "Otimizada com sucesso!";
-        } else {
-            // Se for maior ou igual, apenas copie o arquivo original
-            fs.copyFileSync(tempPath, outputPath);
-        }
+        // Decide qual buffer usar (o otimizado ou o original se não houver melhora)
+        const originalFileBuffer = fs.readFileSync(req.file.path);
+        const finalBuffer = (optimizedBuffer.length < originalSize) ? optimizedBuffer : originalFileBuffer;
+        const finalSize = finalBuffer.length;
+        
+        let statusMessage = (finalBuffer.length < originalSize) ? "Otimizada com sucesso!" : "Já estava otimizada!";
 
-        // Apaga o arquivo original temporário da pasta /uploads
-        fs.unlinkSync(tempPath);
+        // Envia a imagem de volta como um dado base64, em vez de um link
+        const base64Image = finalBuffer.toString('base64');
+        const mimeType = 'image/jpeg';
 
         res.json({
             success: true,
             originalName: originalname,
-            optimizedUrl: `/optimized/${optimizedFileName}`,
-            originalSize: Math.round(originalSize / 1024), // em KB
-            optimizedSize: Math.round(finalSize / 1024), // em KB
-            status: statusMessage
+            originalSize: Math.round(originalSize / 1024),
+            optimizedSize: Math.round(finalSize / 1024),
+            status: statusMessage,
+            imageData: `data:${mimeType};base64,${base64Image}` // A imagem é enviada diretamente na resposta JSON
         });
 
     } catch (error) {
@@ -76,6 +56,7 @@ app.post('/optimize', upload.single('image'), async (req, res) => {
     }
 });
 
+// O Render vai usar a porta que ele mesmo definir, mas o listen é necessário
 app.listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
 });
