@@ -1,26 +1,25 @@
-// server.js (CÓDIGO COMPLETO E CORRIGIDO)
+// server.js 
 
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
-const os = require('os'); // Usado para encontrar a pasta temporária do sistema
+const os = require('os'); 
 
 const app = express();
-// O Render define a porta automaticamente, mas 3000 é usado para desenvolvimento local.
+
 const PORT = process.env.PORT || 3000; 
 
-// Middleware para servir os arquivos estáticos da pasta 'public' (index.html, style.css, etc.)
+
 app.use(express.static('public'));
 
-// Configuração do Multer para salvar o arquivo de upload em uma pasta temporária do sistema operacional.
-// Isso é crucial para ambientes de nuvem como o Render.
+
 const upload = multer({ dest: os.tmpdir() });
 
-// Define a rota POST para otimização da imagem
+
 app.post('/optimize', upload.single('image'), async (req, res) => {
-    // Verifica se um arquivo foi realmente enviado
+
     if (!req.file) {
         return res.status(400).json({ error: 'Nenhuma imagem enviada.' });
     }
@@ -38,12 +37,9 @@ app.post('/optimize', upload.single('image'), async (req, res) => {
 
         // 2. Compara os tamanhos e decide qual buffer (versão) da imagem usar
         if (optimizedBuffer.length < originalSize) {
-            // Se a versão otimizada for menor, nós a usamos.
             finalBuffer = optimizedBuffer;
             statusMessage = "Otimizada com sucesso!";
         } else {
-            // Se a otimizada não for menor, lemos o arquivo original para o buffer.
-            // Isso acontece ANTES de apagarmos o arquivo.
             finalBuffer = fs.readFileSync(tempPath);
             statusMessage = "Já estava otimizada!";
         }
