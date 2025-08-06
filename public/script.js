@@ -30,7 +30,6 @@ uploadForm.addEventListener('submit', async (event) => {
     submitButton.textContent = 'Otimizando...';
 
     try {
-        // A rota aqui é a que definimos no nosso server.js
         const response = await fetch('/optimize', {
             method: 'POST',
             body: formData,
